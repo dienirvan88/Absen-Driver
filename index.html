@@ -111,7 +111,7 @@
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Lembur Malam (&gt; 21.00)</span>
-          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-50 text-purple-700">Rp 25rb/jam</span>
+          <span id="badge-night-rate" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-50 text-purple-700">Rp 25rb/jam</span>
         </div>
         <div class="mt-2 flex items-baseline gap-2">
           <span id="kpi-night-pay" class="text-2xl font-extrabold text-purple-700 tabular-nums">Rp 0</span>
@@ -123,7 +123,7 @@
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Benefit Lembur</span>
-          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700">Rp 15rb + 25rb</span>
+          <span id="badge-total-rate" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700">Rp 15rb + 25rb</span>
         </div>
         <div class="mt-2 flex items-baseline gap-2">
           <span id="kpi-total-pay" class="text-2xl font-extrabold text-emerald-700 tabular-nums">Rp 0</span>
@@ -596,20 +596,25 @@
         const inputDrv = document.getElementById('input-driver');
 
         const prevFilter = state.selectedDriver;
-        const prevQuick = quickDrv.value || (state.drivers[0] ? state.drivers[0].id : '');
-        const prevInput = inputDrv.value || (state.drivers[0] ? state.drivers[0].id : '');
+        const prevQuick = quickDrv ? (quickDrv.value || (state.drivers[0] ? state.drivers[0].id : '')) : '';
+        const prevInput = inputDrv ? (inputDrv.value || (state.drivers[0] ? state.drivers[0].id : '')) : '';
 
-        filterDrv.innerHTML = `<option value="all">Semua Pengemudi (${state.drivers.length})</option>` +
-          state.drivers.map((d) => `<option value="${d.id}">${d.name} (${d.plate})</option>`).join('');
-        filterDrv.value = state.drivers.some((d) => d.id === prevFilter) ? prevFilter : 'all';
-        state.selectedDriver = filterDrv.value;
+        if (filterDrv) {
+          filterDrv.innerHTML = `<option value="all">Semua Pengemudi (${state.drivers.length})</option>` +
+            state.drivers.map((d) => `<option value="${d.id}">${d.name} (${d.plate})</option>`).join('');
+          filterDrv.value = state.drivers.some((d) => d.id === prevFilter) ? prevFilter : 'all';
+          state.selectedDriver = filterDrv.value;
+        }
 
         const drvOptions = state.drivers.map((d) => `<option value="${d.id}">${d.name} (${d.plate})</option>`).join('');
-        quickDrv.innerHTML = drvOptions;
-        inputDrv.innerHTML = drvOptions;
-
-        if (state.drivers.some((d) => d.id === prevQuick)) quickDrv.value = prevQuick;
-        if (state.drivers.some((d) => d.id === prevInput)) inputDrv.value = prevInput;
+        if (quickDrv) {
+          quickDrv.innerHTML = drvOptions;
+          if (state.drivers.some((d) => d.id === prevQuick)) quickDrv.value = prevQuick;
+        }
+        if (inputDrv) {
+          inputDrv.innerHTML = drvOptions;
+          if (state.drivers.some((d) => d.id === prevInput)) inputDrv.value = prevInput;
+        }
       }
 
       function renderKPIs() {
@@ -817,8 +822,11 @@
       }
 
       function updateManualPreview() {
-        const inVal = document.getElementById('input-in').value;
-        const outVal = document.getElementById('input-out').value;
+        const inEl = document.getElementById('input-in');
+        const outEl = document.getElementById('input-out');
+        if (!inEl || !outEl) return;
+        const inVal = inEl.value;
+        const outVal = outEl.value;
         const res = computeShift(inVal, outVal, state.settings);
 
         document.getElementById('prev-total').textContent = formatHours(res.totalHours);
@@ -887,16 +895,19 @@
 
       function renderSettingsForm() {
         const s = state.settings;
-        document.getElementById('set-daily-hours').value = s.dailyStandardHours;
-        document.getElementById('set-monthly-target').value = s.monthlyTargetHours;
-        document.getElementById('set-monthly-rate').value = s.monthlyOvertimeRate;
-        document.getElementById('set-night-rate').value = s.nightOvertimeRate;
-        document.getElementById('set-gsheets-url').value = s.gsheetsUrl || '';
-        const shareInput = document.getElementById('driver-share-link');
-        if (shareInput) {
-          const base = window.location.href.split('?')[0].split('#')[0];
-          const urlPart = s.gsheetsUrl ? `?url=${encodeURIComponent(s.gsheetsUrl)}&mode=driver` : '?mode=driver';
-          shareInput.value = base + urlPart;
+        const elDaily = document.getElementById('set-daily-hours');
+        if (elDaily) {
+          elDaily.value = s.dailyStandardHours;
+          document.getElementById('set-monthly-target').value = s.monthlyTargetHours;
+          document.getElementById('set-monthly-rate').value = s.monthlyOvertimeRate;
+          document.getElementById('set-night-rate').value = s.nightOvertimeRate;
+          document.getElementById('set-gsheets-url').value = s.gsheetsUrl || '';
+          const shareInput = document.getElementById('driver-share-link');
+          if (shareInput) {
+            const base = window.location.href.split('?')[0].split('#')[0];
+            const urlPart = s.gsheetsUrl ? `?url=${encodeURIComponent(s.gsheetsUrl)}&mode=driver` : '?mode=driver';
+            shareInput.value = base + urlPart;
+          }
         }
         updateSyncIndicator();
       }
@@ -1181,7 +1192,7 @@
 
       function applyDriverMode() {
         if (!isDriverMode) return;
-        ['manual-card', 'th-aksi', 'btn-add-driver', 'tab-btn-aturan', 'tab-aturan'].forEach((id) => {
+        ['manual-card', 'th-aksi', 'btn-add-driver', 'tab-btn-aturan', 'tab-aturan', 'badge-night-rate', 'badge-total-rate'].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.remove();
         });
@@ -1203,7 +1214,7 @@
       } catch (e) {}
       applyDriverMode();
       document.getElementById('filter-month').value = state.selectedMonth;
-      document.getElementById('input-date').value = getTodayStr();
+      const inputDateEl = document.getElementById('input-date'); if (inputDateEl) inputDateEl.value = getTodayStr();
       tickClock();
       setInterval(tickClock, 1000);
       renderAll();
