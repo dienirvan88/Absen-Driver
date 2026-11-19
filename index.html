@@ -894,7 +894,7 @@
         document.getElementById('set-gsheets-url').value = s.gsheetsUrl || '';
         const shareInput = document.getElementById('driver-share-link');
         if (shareInput) {
-          const base = window.location.href.split('?')[0];
+          const base = window.location.href.split('?')[0].split('#')[0];
           const urlPart = s.gsheetsUrl ? `?url=${encodeURIComponent(s.gsheetsUrl)}&mode=driver` : '?mode=driver';
           shareInput.value = base + urlPart;
         }
@@ -932,6 +932,7 @@
       document.querySelectorAll('.tab-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           const target = btn.dataset.tab;
+          if (isDriverMode && target === 'aturan') return;
           document.querySelectorAll('.tab-btn').forEach((b) => {
             b.className = 'tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap';
           });
@@ -1180,9 +1181,9 @@
 
       function applyDriverMode() {
         if (!isDriverMode) return;
-        ['manual-card', 'th-aksi', 'btn-add-driver', 'tab-btn-aturan'].forEach((id) => {
+        ['manual-card', 'th-aksi', 'btn-add-driver', 'tab-btn-aturan', 'tab-aturan'].forEach((id) => {
           const el = document.getElementById(id);
-          if (el) el.classList.add('hidden');
+          if (el) el.remove();
         });
         const sub = document.getElementById('header-subtitle');
         if (sub) sub.textContent = 'Mode Pengemudi — Absensi Real-Time';
