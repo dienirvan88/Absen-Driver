@@ -383,7 +383,7 @@
 
   <script>
     (function () {
-      const STORAGE_KEY = 'absendriver_state_v2';
+      const STORAGE_KEY = 'absendriver_state_v3';
 
       const DEFAULT_SETTINGS = {
         dailyStandardHours: 9,
@@ -411,29 +411,12 @@
 
       function createSampleState() {
         const ym = getCurrentMonthStr();
-        const logs = [];
-        let idCounter = 1;
-
-        // Driver tunggal: Arifin (B 1712 WMW)
-        for (let day = 1; day <= 18; day++) {
-          const dd = String(day).padStart(2, '0');
-          const outTime = day % 5 === 0 ? '22:30' : (day % 3 === 0 ? '20:00' : '19:00');
-          logs.push({
-            id: `log-${idCounter++}`,
-            driverId: 'drv-1',
-            date: `${ym}-${dd}`,
-            clockIn: '08:00',
-            clockOut: outTime,
-            note: day % 5 === 0 ? 'Lembur malam antar tamu' : 'Operasional harian'
-          });
-        }
-
         return {
           settings: { ...DEFAULT_SETTINGS },
           drivers: [
             { id: 'drv-1', name: 'Arifin', plate: 'B 1712 WMW' }
           ],
-          logs,
+          logs: [],
           activeShifts: {}, // { driverId: { date, clockIn } }
           selectedMonth: ym,
           selectedDriver: 'drv-1'
@@ -884,6 +867,9 @@
           const data = await resp.json();
           if (data && Array.isArray(data.logs)) {
             state.logs = data.logs;
+            if (data.activeShifts && typeof data.activeShifts === 'object') {
+              state.activeShifts = data.activeShifts;
+            }
             saveState();
             renderAll();
             if (!silent) showToast(`Sinkronisasi berhasil (${data.logs.length} catatan).`);
@@ -980,12 +966,14 @@
         if (!drvId) return;
         const now = new Date();
         const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        state.activeShifts[drvId] = {
+        const shiftData = {
           date: getTodayStr(),
           clockIn: hhmm
         };
+        state.activeShifts[drvId] = shiftData;
         saveState();
         renderQuickShiftUI();
+        pushToSheets({ action: 'clock_in', driverId: drvId, date: shiftData.date, clockIn: shiftData.clockIn });
         showToast('Absen masuk berhasil dicatat.');
       });
 
@@ -1044,7 +1032,7 @@
         document.getElementById('input-note').value = '';
         saveState();
         renderAll();
-        pushToSheets({ action: 'add', log: newLog, driverName: drv ? drv.name : 'Arifin', plate: drv ? drv.plate : 'B 1712 WMW' });
+        pushToSheets({ action: 'add', log: newLog, driverName: drv ? drv.name : 'Arifin', plate: drv ? drv.plate : 'B 1712 WMW', clearActive: false });
         showToast('Catatan absensi berhasil disimpan.');
       });
 
