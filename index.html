@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AbsenDriver — Aplikasi Absensi & Lembur Pengemudi</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen antialiased">
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+  <!-- Modal Backdrop -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div id="modal-box" class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200">
+      <h3 id="modal-title" class="text-lg font-bold text-slate-900"></h3>
+      <p id="modal-body" class="text-sm text-slate-600 mt-2"></p>
+      <div id="modal-extra" class="mt-3"></div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button id="modal-cancel" type="button" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition">Batal</button>
+        <button id="modal-confirm" type="button" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition">Konfirmasi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Navbar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h8m-8 5h4m4.5 5.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM6.5 17.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM3 13l1.5-5A2 2 0 016.4 6.5h7.2a2 2 0 011.9 1.4L17 12h2a2 2 0 012 2v2.5a1 1 0 01-1 1h-1.5" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">AbsenDriver</h1>
+          <p class="text-xs text-slate-500">Absensi, Jam Kerja 9 Jam &amp; Lembur Otomatis</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-1.5 bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-200">
+          <label for="filter-month" class="text-xs font-medium text-slate-600">Bulan:</label>
+          <input id="filter-month" type="month" class="bg-transparent text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none" />
+        </div>
+        <select id="filter-driver" class="bg-slate-100 border border-slate-200 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </select>
+        <button id="btn-add-driver" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition">
+          <span>+ Pengemudi</span>
+        </button>
+        <button id="btn-sync-sheets" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition">
+          <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span>Sinkron Sheets</span>
+        </button>
+        <button id="btn-export-csv" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+          </svg>
+          <span>Ekspor CSV</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1 border-t border-slate-100 overflow-x-auto">
+      <button data-tab="absensi" class="tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-indigo-600 text-indigo-600 whitespace-nowrap">Catat Absensi</button>
+      <button data-tab="rekap" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">Rekap &amp; Grafik Bulanan</button>
+      <button data-tab="aturan" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">Aturan &amp; Tarif</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <!-- KPI Summary Cards -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Jam Reguler (&le; 21.00)</span>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700" id="kpi-days-badge">0 hari</span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="kpi-regular-hours" class="text-2xl font-extrabold text-slate-900 tabular-nums">0 jam</span>
+          <span id="kpi-total-hours-sub" class="text-xs text-slate-500 tabular-nums">Total: 0 jam</span>
+        </div>
+        <div class="mt-3 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+          <div id="kpi-progress-bar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <p id="kpi-progress-text" class="mt-1.5 text-xs text-slate-500 tabular-nums">0% dari target disesuaikan</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Target Bulanan</span>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-50 text-amber-700">Auto-Kurang</span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="kpi-adjusted-target" class="text-2xl font-extrabold text-slate-900 tabular-nums">198 jam</span>
+          <span id="kpi-base-target-sub" class="text-xs text-slate-500 tabular-nums">Awal: 198 jam</span>
+        </div>
+        <p id="kpi-target-formula" class="mt-3 text-xs text-slate-600 tabular-nums">198 − 0 jam (&gt;21.00) = 198 jam</p>
+        <p id="kpi-remaining-text" class="mt-1 text-xs font-medium text-slate-500 tabular-nums">Sisa target: 198 jam</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Lembur Malam (&gt; 21.00)</span>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-50 text-purple-700">Rp 25rb/jam</span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="kpi-night-pay" class="text-2xl font-extrabold text-purple-700 tabular-nums">Rp 0</span>
+        </div>
+        <p id="kpi-night-hours" class="mt-3 text-xs text-slate-600 tabular-nums">0 jam lembur malam</p>
+        <p class="mt-1 text-xs text-slate-500">Otomatis memotong target 198 jam</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Benefit Lembur</span>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700">Rp 15rb + 25rb</span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="kpi-total-pay" class="text-2xl font-extrabold text-emerald-700 tabular-nums">Rp 0</span>
+        </div>
+        <p id="kpi-monthly-ot" class="mt-3 text-xs text-slate-600 tabular-nums">Lembur bulanan: 0 jam (Rp 0)</p>
+        <p class="mt-1 text-xs text-slate-500">Kelebihan di atas target disesuaikan</p>
+      </div>
+    </section>
+
+    <!-- TAB 1: CATAT ABSENSI -->
+    <section id="tab-absensi" class="tab-panel space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left Column: Live Clock-In/Out + Manual Form -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Live Clock-In/Out Card -->
+          <div class="bg-gradient-to-br from-indigo-600 to-slate-900 rounded-2xl p-5 text-white shadow-md">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-200">Absen Cepat (Real-Time)</span>
+                <div id="live-clock" class="text-3xl font-extrabold tracking-tight tabular-nums mt-1">00:00:00</div>
+                <div id="live-date" class="text-xs text-indigo-200 mt-0.5">Memuat tanggal...</div>
+              </div>
+              <div class="text-right">
+                <span id="live-shift-badge" class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 text-white">Siap Absen</span>
+              </div>
+            </div>
+
+            <div class="mt-4 space-y-3">
+              <div>
+                <label for="quick-driver" class="block text-xs font-medium text-indigo-100 mb-1">Pilih Pengemudi</label>
+                <select id="quick-driver" class="w-full rounded-xl bg-white/10 border border-white/20 px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-white/40 [&>option]:text-slate-900"></select>
+              </div>
+              <div id="active-shift-info" class="hidden rounded-xl bg-white/10 border border-white/15 p-3 text-xs space-y-1">
+                <div class="flex justify-between">
+                  <span class="text-indigo-200">Masuk pada:</span>
+                  <span id="active-shift-start" class="font-bold tabular-nums">-</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-indigo-200">Durasi berjalan:</span>
+                  <span id="active-shift-duration" class="font-bold tabular-nums">-</span>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2.5">
+                <button id="btn-clock-in" type="button" class="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                  Absen Masuk
+                </button>
+                <button id="btn-clock-out" type="button" class="py-2.5 px-4 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                  Absen Pulang
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manual Attendance Form -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <h2 class="text-base font-bold text-slate-900">Input / Koreksi Absensi Manual</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Catat shift harian dan lihat simulasi lembur sebelum menyimpan.</p>
+
+            <form id="manual-form" class="mt-4 space-y-3.5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label for="input-driver" class="block text-xs font-semibold text-slate-700 mb-1">Pengemudi</label>
+                  <select id="input-driver" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div>
+                  <label for="input-date" class="block text-xs font-semibold text-slate-700 mb-1">Tanggal</label>
+                  <input id="input-date" type="date" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="input-in" class="block text-xs font-semibold text-slate-700 mb-1">Jam Masuk</label>
+                  <input id="input-in" type="time" value="08:00" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label for="input-out" class="block text-xs font-semibold text-slate-700 mb-1">Jam Pulang</label>
+                  <input id="input-out" type="time" value="17:00" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+              </div>
+
+              <div>
+                <label for="input-note" class="block text-xs font-semibold text-slate-700 mb-1">Catatan / Rute (Opsional)</label>
+                <input id="input-note" type="text" placeholder="Contoh: Antar ke Bandara Soekarno-Hatta" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+
+              <!-- Live Preview Box -->
+              <div id="preview-box" class="rounded-xl bg-slate-50 border border-slate-200 p-3.5 space-y-1.5 text-xs">
+                <div class="font-bold text-slate-700">Simulasi Perhitungan Shift:</div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600">Total Durasi Kerja:</span>
+                  <span id="prev-total" class="font-bold text-slate-900 tabular-nums">9,00 jam</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600">Jam Reguler (&le; 21.00):</span>
+                  <span id="prev-reg" class="font-semibold text-indigo-700 tabular-nums">9,00 jam</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600">Lembur Malam (&gt; 21.00):</span>
+                  <span id="prev-night" class="font-semibold text-purple-700 tabular-nums">0,00 jam (Rp 0)</span>
+                </div>
+                <div class="flex justify-between border-t border-slate-200 pt-1.5 mt-1.5">
+                  <span class="text-slate-600">Status Standar 9 Jam:</span>
+                  <span id="prev-status" class="font-semibold text-emerald-700">Sesuai Standar (9 jam)</span>
+                </div>
+              </div>
+
+              <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition shadow-sm">
+                Simpan Catatan Absensi
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right Column: Recent Logs Table -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+          <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Riwayat Absensi Bulan Ini</h2>
+              <p class="text-xs text-slate-500">Klik hapus jika ada catatan yang perlu dikoreksi.</p>
+            </div>
+            <span id="logs-count-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">0 catatan</span>
+          </div>
+
+          <div class="overflow-x-auto flex-1">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                  <th class="py-3 px-4 font-semibold">Tanggal</th>
+                  <th class="py-3 px-3 font-semibold">Pengemudi</th>
+                  <th class="py-3 px-3 font-semibold">Jam</th>
+                  <th class="py-3 px-3 font-semibold text-right">Reguler</th>
+                  <th class="py-3 px-3 font-semibold text-right">Lembur &gt;21.00</th>
+                  <th class="py-3 px-3 font-semibold text-right">Benefit Malam</th>
+                  <th class="py-3 px-4 font-semibold text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody" class="divide-y divide-slate-100">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: REKAP & GRAFIK BULANAN -->
+    <section id="tab-rekap" class="tab-panel hidden space-y-6">
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Rekapitulasi Jam Kerja &amp; Benefit Per Pengemudi</h2>
+            <p class="text-xs text-slate-500">Lembur &gt; 21.00 (Rp 25rb/jam) otomatis mengurangi target 198 jam; kelebihan di atas target disesuaikan dihitung Rp 15rb/jam.</p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <th class="py-3 px-4 font-semibold">Pengemudi</th>
+                <th class="py-3 px-3 font-semibold text-right">Hari</th>
+                <th class="py-3 px-3 font-semibold text-right">Jam &le; 21.00</th>
+                <th class="py-3 px-3 font-semibold text-right">Lembur &gt; 21.00</th>
+                <th class="py-3 px-3 font-semibold text-right">Target Disesuaikan</th>
+                <th class="py-3 px-3 font-semibold text-right">Lembur Bulanan</th>
+                <th class="py-3 px-3 font-semibold text-right">Benefit Malam</th>
+                <th class="py-3 px-3 font-semibold text-right">Benefit Bulanan</th>
+                <th class="py-3 px-4 font-semibold text-right">Total Benefit</th>
+              </tr>
+            </thead>
+            <tbody id="summary-tbody" class="divide-y divide-slate-100">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <h3 class="text-base font-bold text-slate-900 mb-1">Perbandingan Jam Kerja vs Target Disesuaikan</h3>
+        <p class="text-xs text-slate-500 mb-4">Visualisasi jam reguler, lembur malam (&gt; 21.00), dan sisa/kelebihan terhadap target 198 jam.</p>
+        <div class="relative h-72">
+          <canvas id="hours-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ATURAN & TARIF -->
+    <section id="tab-aturan" class="tab-panel hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <h2 class="text-base font-bold text-slate-900">Konfigurasi Aturan Kerja &amp; Lembur</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Nilai default sudah disesuaikan dengan ketentuan Anda.</p>
+
+          <form id="settings-form" class="mt-4 space-y-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="set-daily-hours" class="block text-xs font-semibold text-slate-700 mb-1">Standar Jam Kerja Harian (Jam)</label>
+                <input id="set-daily-hours" type="number" min="1" max="24" step="0.5" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm tabular-nums" />
+              </div>
+              <div>
+                <label for="set-monthly-target" class="block text-xs font-semibold text-slate-700 mb-1">Target Jam Kerja Bulanan (Jam)</label>
+                <input id="set-monthly-target" type="number" min="1" max="400" step="1" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm tabular-nums" />
+              </div>
+              <div>
+                <label for="set-monthly-rate" class="block text-xs font-semibold text-slate-700 mb-1">Benefit Lembur &gt; Target (Rp/jam)</label>
+                <input id="set-monthly-rate" type="number" min="0" step="1000" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm tabular-nums" />
+              </div>
+              <div>
+                <label for="set-night-rate" class="block text-xs font-semibold text-slate-700 mb-1">Benefit Lembur &gt; 21.00 (Rp/jam)</label>
+                <input id="set-night-rate" type="number" min="0" step="1000" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm tabular-nums" />
+              </div>
+            </div>
+            <div>
+              <label for="set-gsheets-url" class="block text-xs font-semibold text-slate-700 mb-1">URL Web App Google Apps Script (Sinkronisasi Google Sheets)</label>
+              <input id="set-gsheets-url" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <p class="text-[11px] text-slate-500 mt-1">Opsional: isi URL deploy Apps Script agar absen Arifin otomatis tersimpan ke Google Sheets Anda.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-2">
+              <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition">Simpan Pengaturan</button>
+              <button id="btn-reset-demo" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition">Reset Data Contoh</button>
+              <button id="btn-clear-all" type="button" class="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-semibold transition">Hapus Semua Catatan</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+          <h2 class="text-base font-bold text-slate-900">Ringkasan Logika Perhitungan</h2>
+          <ul class="space-y-2.5 text-sm text-slate-700">
+            <li class="flex gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+              <span><strong>Standar Harian 9 Jam:</strong> Setiap shift dibandingkan dengan standar 9 jam/hari untuk memantau ketercapaian harian pengemudi.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <span><strong>Target Bulanan 198 Jam:</strong> Akumulasi jam kerja reguler (&le; 21.00) dalam 1 bulan ditargetkan mencapai 198 jam.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <span><strong>Lembur Bulanan (Rp 15.000/jam):</strong> Apabila total jam reguler melebihi target bulanan yang berlaku, setiap kelebihan jam dibayar Rp 15.000/jam.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">4</span>
+              <span><strong>Lembur Malam &gt; 21.00 (Rp 25.000/jam + Potong Target):</strong> Setiap jam kerja setelah pukul 21.00 langsung dihitung lembur Rp 25.000/jam, dan jam tersebut otomatis mengurangi target bulanan 198 jam (<code class="bg-slate-100 px-1 rounded text-xs">Target Baru = 198 − Jam &gt; 21.00</code>).</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'absendriver_state_v2';
+
+      const DEFAULT_SETTINGS = {
+        dailyStandardHours: 9,
+        monthlyTargetHours: 198,
+        monthlyOvertimeRate: 15000,
+        nightCutoffMinutes: 21 * 60, // 21:00
+        nightOvertimeRate: 25000,
+        gsheetsUrl: ''
+      };
+
+      function getCurrentMonthStr() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        return `${y}-${m}`;
+      }
+
+      function getTodayStr() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function createSampleState() {
+        const ym = getCurrentMonthStr();
+        const logs = [];
+        let idCounter = 1;
+
+        // Driver tunggal: Arifin (B 1712 WMW)
+        for (let day = 1; day <= 18; day++) {
+          const dd = String(day).padStart(2, '0');
+          const outTime = day % 5 === 0 ? '22:30' : (day % 3 === 0 ? '20:00' : '19:00');
+          logs.push({
+            id: `log-${idCounter++}`,
+            driverId: 'drv-1',
+            date: `${ym}-${dd}`,
+            clockIn: '08:00',
+            clockOut: outTime,
+            note: day % 5 === 0 ? 'Lembur malam antar tamu' : 'Operasional harian'
+          });
+        }
+
+        return {
+          settings: { ...DEFAULT_SETTINGS },
+          drivers: [
+            { id: 'drv-1', name: 'Arifin', plate: 'B 1712 WMW' }
+          ],
+          logs,
+          activeShifts: {}, // { driverId: { date, clockIn } }
+          selectedMonth: ym,
+          selectedDriver: 'drv-1'
+        };
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.drivers) && Array.isArray(parsed.logs)) {
+              return {
+                ...createSampleState(),
+                ...parsed,
+                settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) }
+              };
+            }
+          }
+        } catch (e) {
+          // ignore storage errors
+        }
+        return createSampleState();
+      }
+
+      let state = loadState();
+      let chartInstance = null;
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          // ignore storage errors
+        }
+      }
+
+      // Time & Calculation Helpers
+      function timeToMinutes(hhmm) {
+        if (!hhmm || !hhmm.includes(':')) return 0;
+        const [h, m] = hhmm.split(':').map(Number);
+        return (h || 0) * 60 + (m || 0);
+      }
+
+      function computeShift(clockIn, clockOut, settings) {
+        const inMin = timeToMinutes(clockIn);
+        let outMin = timeToMinutes(clockOut);
+        if (outMin <= inMin) {
+          outMin += 24 * 60; // crossed midnight
+        }
+        const totalMin = outMin - inMin;
+        const cutoff = settings.nightCutoffMinutes; // 1260 (21:00)
+
+        // Minutes worked strictly after 21:00
+        let nightOtMin = 0;
+        if (outMin > cutoff) {
+          const nightStart = Math.max(inMin, cutoff);
+          nightOtMin = Math.max(0, outMin - nightStart);
+        }
+        const regularMin = Math.max(0, totalMin - nightOtMin);
+
+        const totalHours = totalMin / 60;
+        const regularHours = regularMin / 60;
+        const nightOtHours = nightOtMin / 60;
+        const nightOtPay = Math.round(nightOtHours * settings.nightOvertimeRate);
+
+        return {
+          totalHours,
+          regularHours,
+          nightOtHours,
+          nightOtPay
+        };
+      }
+
+      function computeDriverMonthly(driverId, monthStr) {
+        const s = state.settings;
+        const filtered = state.logs.filter(
+          (l) => l.driverId === driverId && l.date.startsWith(monthStr)
+        );
+        let totalHours = 0;
+        let regularHours = 0;
+        let nightOtHours = 0;
+        let nightOtPay = 0;
+
+        filtered.forEach((l) => {
+          const res = computeShift(l.clockIn, l.clockOut, s);
+          totalHours += res.totalHours;
+          regularHours += res.regularHours;
+          nightOtHours += res.nightOtHours;
+          nightOtPay += res.nightOtPay;
+        });
+
+        const adjustedTarget = Math.max(0, s.monthlyTargetHours - nightOtHours);
+        const monthlyOtHours = Math.max(0, regularHours - adjustedTarget);
+        const monthlyOtPay = Math.round(monthlyOtHours * s.monthlyOvertimeRate);
+        const totalOtPay = nightOtPay + monthlyOtPay;
+        const remainingHours = Math.max(0, adjustedTarget - regularHours);
+        const progressPct = adjustedTarget > 0 ? Math.min(100, (regularHours / adjustedTarget) * 100) : 100;
+
+        return {
+          daysCount: filtered.length,
+          totalHours,
+          regularHours,
+          nightOtHours,
+          nightOtPay,
+          adjustedTarget,
+          monthlyOtHours,
+          monthlyOtPay,
+          totalOtPay,
+          remainingHours,
+          progressPct
+        };
+      }
+
+      function formatHours(h) {
+        return `${h.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} jam`;
+      }
+
+      function formatRp(num) {
+        return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+      }
+
+      function showToast(msg, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        const colors = type === 'error'
+          ? 'bg-rose-600 text-white'
+          : 'bg-slate-900 text-white';
+        el.className = `${colors} px-4 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-medium transition-opacity duration-300`;
+        el.textContent = msg;
+        container.appendChild(el);
+        setTimeout(() => {
+          el.classList.add('opacity-0');
+          setTimeout(() => el.remove(), 300);
+        }, 2800);
+      }
+
+      function openModal({ title, body, extraHtml = '', confirmText = 'Konfirmasi', confirmClass = 'bg-indigo-600 hover:bg-indigo-700', onConfirm }) {
+        const backdrop = document.getElementById('modal-backdrop');
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-body').textContent = body;
+        document.getElementById('modal-extra').innerHTML = extraHtml;
+        const btnConfirm = document.getElementById('modal-confirm');
+        btnConfirm.textContent = confirmText;
+        btnConfirm.className = `px-4 py-2 rounded-lg text-sm font-semibold text-white transition ${confirmClass}`;
+
+        backdrop.classList.remove('hidden');
+
+        const close = () => backdrop.classList.add('hidden');
+        document.getElementById('modal-cancel').onclick = close;
+        btnConfirm.onclick = () => {
+          if (onConfirm() !== false) close();
+        };
+      }
+
+      // Render Functions
+      function renderDriverSelects() {
+        const filterDrv = document.getElementById('filter-driver');
+        const quickDrv = document.getElementById('quick-driver');
+        const inputDrv = document.getElementById('input-driver');
+
+        const prevFilter = state.selectedDriver;
+        const prevQuick = quickDrv.value || (state.drivers[0] ? state.drivers[0].id : '');
+        const prevInput = inputDrv.value || (state.drivers[0] ? state.drivers[0].id : '');
+
+        filterDrv.innerHTML = `<option value="all">Semua Pengemudi (${state.drivers.length})</option>` +
+          state.drivers.map((d) => `<option value="${d.id}">${d.name} (${d.plate})</option>`).join('');
+        filterDrv.value = state.drivers.some((d) => d.id === prevFilter) ? prevFilter : 'all';
+        state.selectedDriver = filterDrv.value;
+
+        const drvOptions = state.drivers.map((d) => `<option value="${d.id}">${d.name} (${d.plate})</option>`).join('');
+        quickDrv.innerHTML = drvOptions;
+        inputDrv.innerHTML = drvOptions;
+
+        if (state.drivers.some((d) => d.id === prevQuick)) quickDrv.value = prevQuick;
+        if (state.drivers.some((d) => d.id === prevInput)) inputDrv.value = prevInput;
+      }
+
+      function renderKPIs() {
+        const month = state.selectedMonth;
+        const targetDrivers = state.selectedDriver === 'all'
+          ? state.drivers
+          : state.drivers.filter((d) => d.id === state.selectedDriver);
+
+        let agg = {
+          daysCount: 0,
+          totalHours: 0,
+          regularHours: 0,
+          nightOtHours: 0,
+          nightOtPay: 0,
+          adjustedTarget: 0,
+          monthlyOtHours: 0,
+          monthlyOtPay: 0,
+          totalOtPay: 0,
+          remainingHours: 0
+        };
+
+        targetDrivers.forEach((d) => {
+          const m = computeDriverMonthly(d.id, month);
+          agg.daysCount += m.daysCount;
+          agg.totalHours += m.totalHours;
+          agg.regularHours += m.regularHours;
+          agg.nightOtHours += m.nightOtHours;
+          agg.nightOtPay += m.nightOtPay;
+          agg.adjustedTarget += m.adjustedTarget;
+          agg.monthlyOtHours += m.monthlyOtHours;
+          agg.monthlyOtPay += m.monthlyOtPay;
+          agg.totalOtPay += m.totalOtPay;
+          agg.remainingHours += m.remainingHours;
+        });
+
+        const baseTargetTotal = state.settings.monthlyTargetHours * targetDrivers.length;
+        const pct = agg.adjustedTarget > 0 ? Math.min(100, (agg.regularHours / agg.adjustedTarget) * 100) : 100;
+
+        document.getElementById('kpi-days-badge').textContent = `${agg.daysCount} shift`;
+        document.getElementById('kpi-regular-hours').textContent = formatHours(agg.regularHours);
+        document.getElementById('kpi-total-hours-sub').textContent = `Total: ${formatHours(agg.totalHours)}`;
+        document.getElementById('kpi-progress-bar').style.width = `${pct.toFixed(1)}%`;
+        document.getElementById('kpi-progress-text').textContent = `${pct.toFixed(1)}% dari target disesuaikan`;
+
+        document.getElementById('kpi-adjusted-target').textContent = formatHours(agg.adjustedTarget);
+        document.getElementById('kpi-base-target-sub').textContent = `Awal: ${baseTargetTotal} jam`;
+        document.getElementById('kpi-target-formula').textContent = `${baseTargetTotal} − ${agg.nightOtHours.toFixed(1)} jam (>21.00) = ${agg.adjustedTarget.toFixed(1)} jam`;
+        document.getElementById('kpi-remaining-text').textContent = agg.remainingHours > 0
+          ? `Sisa target: ${formatHours(agg.remainingHours)}`
+          : 'Target bulanan telah tercapai!';
+
+        document.getElementById('kpi-night-pay').textContent = formatRp(agg.nightOtPay);
+        document.getElementById('kpi-night-hours').textContent = `${formatHours(agg.nightOtHours)} lembur malam`;
+
+        document.getElementById('kpi-total-pay').textContent = formatRp(agg.totalOtPay);
+        document.getElementById('kpi-monthly-ot').textContent = `Lembur bulanan: ${formatHours(agg.monthlyOtHours)} (${formatRp(agg.monthlyOtPay)})`;
+      }
+
+      function renderLogsTable() {
+        const tbody = document.getElementById('logs-tbody');
+        const month = state.selectedMonth;
+        const drvFilter = state.selectedDriver;
+
+        const filtered = state.logs
+          .filter((l) => l.date.startsWith(month) && (drvFilter === 'all' || l.driverId === drvFilter))
+          .sort((a, b) => (b.date + b.clockIn).localeCompare(a.date + a.clockIn));
+
+        document.getElementById('logs-count-badge').textContent = `${filtered.length} catatan`;
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-slate-400 text-sm">Belum ada catatan absensi pada bulan ini.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map((l) => {
+          const drv = state.drivers.find((d) => d.id === l.driverId);
+          const res = computeShift(l.clockIn, l.clockOut, state.settings);
+          const metDaily = res.totalHours >= state.settings.dailyStandardHours;
+          const badgeClass = metDaily ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700';
+
+          return `
+            <tr class="hover:bg-slate-50/80 transition">
+              <td class="py-3 px-4 whitespace-nowrap">
+                <div class="font-semibold text-slate-900 tabular-nums">${l.date}</div>
+                <div class="text-xs text-slate-400 truncate max-w-[140px]">${l.note || '-'}</div>
+              </td>
+              <td class="py-3 px-3 whitespace-nowrap font-medium text-slate-800">${drv ? drv.name : 'Tidak diketahui'}</td>
+              <td class="py-3 px-3 whitespace-nowrap">
+                <div class="tabular-nums font-medium text-slate-800">${l.clockIn} – ${l.clockOut}</div>
+                <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold ${badgeClass}">${formatHours(res.totalHours)}</span>
+              </td>
+              <td class="py-3 px-3 text-right tabular-nums font-semibold text-indigo-700">${formatHours(res.regularHours)}</td>
+              <td class="py-3 px-3 text-right tabular-nums font-semibold ${res.nightOtHours > 0 ? 'text-purple-700' : 'text-slate-400'}">${formatHours(res.nightOtHours)}</td>
+              <td class="py-3 px-3 text-right tabular-nums font-semibold ${res.nightOtPay > 0 ? 'text-purple-700' : 'text-slate-400'}">${formatRp(res.nightOtPay)}</td>
+              <td class="py-3 px-4 text-center">
+                <button data-delete-id="${l.id}" type="button" class="text-xs font-semibold text-rose-600 hover:text-rose-800 px-2 py-1 rounded hover:bg-rose-50 transition">Hapus</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function renderSummaryTableAndChart() {
+        const tbody = document.getElementById('summary-tbody');
+        const month = state.selectedMonth;
+        const rows = state.drivers.map((d) => ({
+          driver: d,
+          stats: computeDriverMonthly(d.id, month)
+        }));
+
+        tbody.innerHTML = rows.map(({ driver, stats }) => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-4 whitespace-nowrap">
+              <div class="font-bold text-slate-900">${driver.name}</div>
+              <div class="text-xs text-slate-500">${driver.plate}</div>
+            </td>
+            <td class="py-3 px-3 text-right tabular-nums">${stats.daysCount}</td>
+            <td class="py-3 px-3 text-right tabular-nums font-semibold text-indigo-700">${formatHours(stats.regularHours)}</td>
+            <td class="py-3 px-3 text-right tabular-nums font-semibold text-purple-700">${formatHours(stats.nightOtHours)}</td>
+            <td class="py-3 px-3 text-right tabular-nums font-medium text-slate-700">${formatHours(stats.adjustedTarget)}</td>
+            <td class="py-3 px-3 text-right tabular-nums font-semibold text-emerald-700">${formatHours(stats.monthlyOtHours)}</td>
+            <td class="py-3 px-3 text-right tabular-nums text-purple-700">${formatRp(stats.nightOtPay)}</td>
+            <td class="py-3 px-3 text-right tabular-nums text-emerald-700">${formatRp(stats.monthlyOtPay)}</td>
+            <td class="py-3 px-4 text-right tabular-nums font-extrabold text-slate-900">${formatRp(stats.totalOtPay)}</td>
+          </tr>
+        `).join('');
+
+        // Chart.js
+        const ctx = document.getElementById('hours-chart');
+        if (!ctx || typeof Chart === 'undefined') return;
+
+        if (chartInstance) {
+          chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: rows.map((r) => r.driver.name),
+            datasets: [
+              {
+                label: 'Jam Reguler (≤ 21.00)',
+                data: rows.map((r) => Number(r.stats.regularHours.toFixed(2))),
+                backgroundColor: '#4f46e5',
+                borderRadius: 6
+              },
+              {
+                label: 'Lembur Malam (> 21.00)',
+                data: rows.map((r) => Number(r.stats.nightOtHours.toFixed(2))),
+                backgroundColor: '#9333ea',
+                borderRadius: 6
+              },
+              {
+                label: 'Target Disesuaikan (198 − Malam)',
+                data: rows.map((r) => Number(r.stats.adjustedTarget.toFixed(2))),
+                backgroundColor: '#cbd5e1',
+                borderRadius: 6
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Jam' }
+              }
+            }
+          }
+        });
+      }
+
+      function renderQuickShiftUI() {
+        const drvId = document.getElementById('quick-driver').value;
+        const active = state.activeShifts[drvId];
+        const badge = document.getElementById('live-shift-badge');
+        const infoBox = document.getElementById('active-shift-info');
+        const btnIn = document.getElementById('btn-clock-in');
+        const btnOut = document.getElementById('btn-clock-out');
+
+        if (active) {
+          badge.textContent = 'Sedang Bekerja';
+          badge.className = 'inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-400 text-slate-950';
+          infoBox.classList.remove('hidden');
+          document.getElementById('active-shift-start').textContent = `${active.date} • ${active.clockIn}`;
+
+          const now = new Date();
+          const nowHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+          const sim = computeShift(active.clockIn, nowHHMM, state.settings);
+          document.getElementById('active-shift-duration').textContent = formatHours(sim.totalHours);
+
+          btnIn.disabled = true;
+          btnOut.disabled = false;
+        } else {
+          badge.textContent = 'Siap Absen';
+          badge.className = 'inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 text-white';
+          infoBox.classList.add('hidden');
+          btnIn.disabled = false;
+          btnOut.disabled = true;
+        }
+      }
+
+      function updateManualPreview() {
+        const inVal = document.getElementById('input-in').value;
+        const outVal = document.getElementById('input-out').value;
+        const res = computeShift(inVal, outVal, state.settings);
+
+        document.getElementById('prev-total').textContent = formatHours(res.totalHours);
+        document.getElementById('prev-reg').textContent = formatHours(res.regularHours);
+        document.getElementById('prev-night').textContent = `${formatHours(res.nightOtHours)} (${formatRp(res.nightOtPay)})`;
+
+        const statusEl = document.getElementById('prev-status');
+        const std = state.settings.dailyStandardHours;
+        if (res.totalHours > std) {
+          statusEl.textContent = `Melebihi standar (+${(res.totalHours - std).toFixed(1)} jam)`;
+          statusEl.className = 'font-semibold text-indigo-700';
+        } else if (res.totalHours === std) {
+          statusEl.textContent = `Sesuai standar (${std} jam)`;
+          statusEl.className = 'font-semibold text-emerald-700';
+        } else {
+          statusEl.textContent = `Kurang dari standar (${(std - res.totalHours).toFixed(1)} jam)`;
+          statusEl.className = 'font-semibold text-amber-700';
+        }
+      }
+
+      function updateSyncIndicator() {
+        const dot = document.getElementById('sync-dot');
+        if (!dot) return;
+        const hasUrl = Boolean(state.settings.gsheetsUrl && state.settings.gsheetsUrl.startsWith('https://'));
+        dot.className = hasUrl ? 'w-2 h-2 rounded-full bg-emerald-500' : 'w-2 h-2 rounded-full bg-slate-400';
+      }
+
+      async function pushToSheets(payload) {
+        const url = state.settings.gsheetsUrl;
+        if (!url || !url.startsWith('https://')) return;
+        try {
+          await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+        } catch (err) {
+          showToast('Gagal kirim ke Google Sheets (tersimpan lokal).', 'error');
+        }
+      }
+
+      async function pullFromSheets(silent = false) {
+        const url = state.settings.gsheetsUrl;
+        if (!url || !url.startsWith('https://')) {
+          if (!silent) {
+            showToast('Masukkan URL Google Apps Script di tab Aturan & Tarif.', 'error');
+            const tabBtn = document.querySelector('[data-tab="aturan"]');
+            if (tabBtn) tabBtn.click();
+          }
+          return;
+        }
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          const data = await resp.json();
+          if (data && Array.isArray(data.logs)) {
+            state.logs = data.logs;
+            saveState();
+            renderAll();
+            if (!silent) showToast(`Sinkronisasi berhasil (${data.logs.length} catatan).`);
+          }
+        } catch (err) {
+          if (!silent) showToast('Gagal mengambil data dari Google Sheets.', 'error');
+        }
+      }
+
+      function renderSettingsForm() {
+        const s = state.settings;
+        document.getElementById('set-daily-hours').value = s.dailyStandardHours;
+        document.getElementById('set-monthly-target').value = s.monthlyTargetHours;
+        document.getElementById('set-monthly-rate').value = s.monthlyOvertimeRate;
+        document.getElementById('set-night-rate').value = s.nightOvertimeRate;
+        document.getElementById('set-gsheets-url').value = s.gsheetsUrl || '';
+        updateSyncIndicator();
+      }
+
+      function renderAll() {
+        renderDriverSelects();
+        renderKPIs();
+        renderLogsTable();
+        renderSummaryTableAndChart();
+        renderQuickShiftUI();
+        updateManualPreview();
+        renderSettingsForm();
+      }
+
+      // Live Clock
+      function tickClock() {
+        const now = new Date();
+        document.getElementById('live-clock').textContent = now.toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+        document.getElementById('live-date').textContent = now.toLocaleDateString('id-ID', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      }
+
+      // Event Listeners
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.tab;
+          document.querySelectorAll('.tab-btn').forEach((b) => {
+            b.className = 'tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap';
+          });
+          btn.className = 'tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-indigo-600 text-indigo-600 whitespace-nowrap';
+
+          document.querySelectorAll('.tab-panel').forEach((p) => p.classList.add('hidden'));
+          document.getElementById(`tab-${target}`).classList.remove('hidden');
+
+          if (target === 'rekap') {
+            renderSummaryTableAndChart();
+          }
+        });
+      });
+
+      document.getElementById('filter-month').addEventListener('change', (e) => {
+        state.selectedMonth = e.target.value || getCurrentMonthStr();
+        saveState();
+        renderKPIs();
+        renderLogsTable();
+        renderSummaryTableAndChart();
+      });
+
+      document.getElementById('filter-driver').addEventListener('change', (e) => {
+        state.selectedDriver = e.target.value;
+        saveState();
+        renderKPIs();
+        renderLogsTable();
+      });
+
+      document.getElementById('quick-driver').addEventListener('change', renderQuickShiftUI);
+
+      document.getElementById('btn-clock-in').addEventListener('click', () => {
+        const drvId = document.getElementById('quick-driver').value;
+        if (!drvId) return;
+        const now = new Date();
+        const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        state.activeShifts[drvId] = {
+          date: getTodayStr(),
+          clockIn: hhmm
+        };
+        saveState();
+        renderQuickShiftUI();
+        showToast('Absen masuk berhasil dicatat.');
+      });
+
+      document.getElementById('btn-clock-out').addEventListener('click', () => {
+        const drvId = document.getElementById('quick-driver').value;
+        const active = state.activeShifts[drvId];
+        if (!active) return;
+        const now = new Date();
+        const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        const newLog = {
+          id: `log-${Date.now()}`,
+          driverId: drvId,
+          date: active.date,
+          clockIn: active.clockIn,
+          clockOut: hhmm,
+          note: 'Absen langsung'
+        };
+        const drv = state.drivers.find((d) => d.id === drvId);
+        state.logs.push(newLog);
+        delete state.activeShifts[drvId];
+        saveState();
+        renderAll();
+        pushToSheets({ action: 'add', log: newLog, driverName: drv ? drv.name : 'Arifin', plate: drv ? drv.plate : 'B 1712 WMW' });
+        showToast('Absen pulang disimpan dan jam kerja diperbarui.');
+      });
+
+      document.getElementById('input-in').addEventListener('input', updateManualPreview);
+      document.getElementById('input-out').addEventListener('input', updateManualPreview);
+
+      document.getElementById('manual-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const driverId = document.getElementById('input-driver').value;
+        const date = document.getElementById('input-date').value;
+        const clockIn = document.getElementById('input-in').value;
+        const clockOut = document.getElementById('input-out').value;
+        const note = document.getElementById('input-note').value.trim();
+
+        if (!driverId || !date || !clockIn || !clockOut) {
+          showToast('Lengkapi semua kolom wajib.', 'error');
+          return;
+        }
+
+        const newLog = {
+          id: `log-${Date.now()}`,
+          driverId,
+          date,
+          clockIn,
+          clockOut,
+          note
+        };
+        const drv = state.drivers.find((d) => d.id === driverId);
+        state.logs.push(newLog);
+        state.selectedMonth = date.slice(0, 7);
+        document.getElementById('filter-month').value = state.selectedMonth;
+        document.getElementById('input-note').value = '';
+        saveState();
+        renderAll();
+        pushToSheets({ action: 'add', log: newLog, driverName: drv ? drv.name : 'Arifin', plate: drv ? drv.plate : 'B 1712 WMW' });
+        showToast('Catatan absensi berhasil disimpan.');
+      });
+
+      document.getElementById('logs-tbody').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-delete-id]');
+        if (!btn) return;
+        const id = btn.dataset.deleteId;
+        openModal({
+          title: 'Hapus Catatan Absensi?',
+          body: 'Catatan ini akan dihapus dari rekap bulan berjalan.',
+          confirmText: 'Hapus',
+          confirmClass: 'bg-rose-600 hover:bg-rose-700',
+          onConfirm: () => {
+            state.logs = state.logs.filter((l) => l.id !== id);
+            saveState();
+            renderAll();
+            pushToSheets({ action: 'delete', id });
+            showToast('Catatan absensi dihapus.');
+          }
+        });
+      });
+
+      document.getElementById('btn-add-driver').addEventListener('click', () => {
+        openModal({
+          title: 'Tambah Pengemudi Baru',
+          body: 'Masukkan nama pengemudi dan nomor polisi kendaraan.',
+          extraHtml: `
+            <div class="space-y-2.5">
+              <input id="new-drv-name" type="text" placeholder="Nama Pengemudi (mis. Hendra Wijaya)" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input id="new-drv-plate" type="text" placeholder="No. Polisi (mis. B 4321 XYZ)" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          `,
+          confirmText: 'Tambah',
+          onConfirm: () => {
+            const name = document.getElementById('new-drv-name').value.trim();
+            const plate = document.getElementById('new-drv-plate').value.trim() || '-';
+            if (!name) {
+              showToast('Nama pengemudi wajib diisi.', 'error');
+              return false;
+            }
+            const newId = `drv-${Date.now()}`;
+            state.drivers.push({ id: newId, name, plate });
+            saveState();
+            renderAll();
+            showToast(`${name} ditambahkan.`);
+          }
+        });
+      });
+
+      document.getElementById('btn-sync-sheets').addEventListener('click', () => pullFromSheets(false));
+
+      document.getElementById('settings-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        state.settings.dailyStandardHours = Number(document.getElementById('set-daily-hours').value) || 9;
+        state.settings.monthlyTargetHours = Number(document.getElementById('set-monthly-target').value) || 198;
+        state.settings.monthlyOvertimeRate = Number(document.getElementById('set-monthly-rate').value) || 15000;
+        state.settings.nightOvertimeRate = Number(document.getElementById('set-night-rate').value) || 25000;
+        state.settings.gsheetsUrl = document.getElementById('set-gsheets-url').value.trim();
+        saveState();
+        renderAll();
+        if (state.settings.gsheetsUrl) {
+          pullFromSheets(false);
+        } else {
+          showToast('Pengaturan aturan & tarif diperbarui.');
+        }
+      });
+
+      document.getElementById('btn-reset-demo').addEventListener('click', () => {
+        openModal({
+          title: 'Reset ke Data Contoh?',
+          body: 'Semua perubahan akan dikembalikan ke data awal simulasi.',
+          confirmText: 'Reset',
+          onConfirm: () => {
+            state = createSampleState();
+            saveState();
+            document.getElementById('filter-month').value = state.selectedMonth;
+            renderAll();
+            showToast('Data contoh dikembalikan.');
+          }
+        });
+      });
+
+      document.getElementById('btn-clear-all').addEventListener('click', () => {
+        openModal({
+          title: 'Hapus Semua Catatan Absensi?',
+          body: 'Daftar pengemudi tetap disimpan, tetapi seluruh riwayat absensi akan dikosongkan.',
+          confirmText: 'Kosongkan',
+          confirmClass: 'bg-rose-600 hover:bg-rose-700',
+          onConfirm: () => {
+            state.logs = [];
+            state.activeShifts = {};
+            saveState();
+            renderAll();
+            showToast('Seluruh catatan absensi dikosongkan.');
+          }
+        });
+      });
+
+      document.getElementById('btn-export-csv').addEventListener('click', () => {
+        const month = state.selectedMonth;
+        const headers = ['Pengemudi', 'Plat', 'Hari Kerja', 'Jam Reguler (<=21.00)', 'Lembur Malam (>21.00)', 'Target Disesuaikan', 'Lembur Bulanan (>Target)', 'Benefit Malam (Rp)', 'Benefit Bulanan (Rp)', 'Total Benefit (Rp)'];
+        const rows = state.drivers.map((d) => {
+          const m = computeDriverMonthly(d.id, month);
+          return [
+            `"${d.name}"`,
+            `"${d.plate}"`,
+            m.daysCount,
+            m.regularHours.toFixed(2),
+            m.nightOtHours.toFixed(2),
+            m.adjustedTarget.toFixed(2),
+            m.monthlyOtHours.toFixed(2),
+            m.nightOtPay,
+            m.monthlyOtPay,
+            m.totalOtPay
+          ].join(',');
+        });
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rekap-absensi-pengemudi-${month}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('File CSV berhasil diunduh.');
+      });
+
+      // Initialize
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const paramUrl = params.get('url');
+        if (paramUrl && paramUrl.startsWith('https://')) {
+          state.settings.gsheetsUrl = paramUrl;
+          saveState();
+        }
+      } catch (e) {}
+      document.getElementById('filter-month').value = state.selectedMonth;
+      document.getElementById('input-date').value = getTodayStr();
+      tickClock();
+      setInterval(tickClock, 1000);
+      renderAll();
+      if (state.settings.gsheetsUrl) {
+        pullFromSheets(true);
+      }
+    })();
+  </script>
+</body>
+</html>
