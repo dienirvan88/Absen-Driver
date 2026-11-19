@@ -92,19 +92,19 @@
         <div class="mt-3 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
           <div id="kpi-progress-bar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
-        <p id="kpi-progress-text" class="mt-1.5 text-xs text-slate-500 tabular-nums">0% dari target disesuaikan</p>
+        <p id="kpi-progress-text" class="mt-1.5 text-xs text-slate-500 tabular-nums">0% dari target 198 jam</p>
       </div>
 
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Target Bulanan</span>
-          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-50 text-amber-700">Auto-Kurang</span>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-50 text-amber-700">Hitung &le; 21.00</span>
         </div>
         <div class="mt-2 flex items-baseline gap-2">
           <span id="kpi-adjusted-target" class="text-2xl font-extrabold text-slate-900 tabular-nums">198 jam</span>
-          <span id="kpi-base-target-sub" class="text-xs text-slate-500 tabular-nums">Awal: 198 jam</span>
+          <span id="kpi-base-target-sub" class="text-xs text-slate-500 tabular-nums">Tetap: 198 jam</span>
         </div>
-        <p id="kpi-target-formula" class="mt-3 text-xs text-slate-600 tabular-nums">198 − 0 jam (&gt;21.00) = 198 jam</p>
+        <p id="kpi-target-formula" class="mt-3 text-xs text-slate-600 tabular-nums">Jam &gt; 21.00 tidak masuk target</p>
         <p id="kpi-remaining-text" class="mt-1 text-xs font-medium text-slate-500 tabular-nums">Sisa target: 198 jam</p>
       </div>
 
@@ -117,7 +117,7 @@
           <span id="kpi-night-pay" class="text-2xl font-extrabold text-purple-700 tabular-nums">Rp 0</span>
         </div>
         <p id="kpi-night-hours" class="mt-3 text-xs text-slate-600 tabular-nums">0 jam lembur malam</p>
-        <p class="mt-1 text-xs text-slate-500">Otomatis memotong target 198 jam</p>
+        <p class="mt-1 text-xs text-slate-500">Tidak masuk hitungan target 198 jam</p>
       </div>
 
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
@@ -129,7 +129,7 @@
           <span id="kpi-total-pay" class="text-2xl font-extrabold text-emerald-700 tabular-nums">Rp 0</span>
         </div>
         <p id="kpi-monthly-ot" class="mt-3 text-xs text-slate-600 tabular-nums">Lembur bulanan: 0 jam (Rp 0)</p>
-        <p class="mt-1 text-xs text-slate-500">Kelebihan di atas target disesuaikan</p>
+        <p class="mt-1 text-xs text-slate-500">Kelebihan jam &le; 21.00 di atas 198 jam</p>
       </div>
     </section>
 
@@ -275,7 +275,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div>
             <h2 class="text-base font-bold text-slate-900">Rekapitulasi Jam Kerja &amp; Benefit Per Pengemudi</h2>
-            <p class="text-xs text-slate-500">Lembur &gt; 21.00 (Rp 25rb/jam) otomatis mengurangi target 198 jam; kelebihan di atas target disesuaikan dihitung Rp 15rb/jam.</p>
+            <p class="text-xs text-slate-500">Jam &gt; 21.00 dihitung lembur Rp 25rb/jam &amp; tidak masuk target 198 jam; kelebihan jam &le; 21.00 di atas 198 jam dihitung Rp 15rb/jam.</p>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -286,7 +286,7 @@
                 <th class="py-3 px-3 font-semibold text-right">Hari</th>
                 <th class="py-3 px-3 font-semibold text-right">Jam &le; 21.00</th>
                 <th class="py-3 px-3 font-semibold text-right">Lembur &gt; 21.00</th>
-                <th class="py-3 px-3 font-semibold text-right">Target Disesuaikan</th>
+                <th class="py-3 px-3 font-semibold text-right">Target Bulanan</th>
                 <th class="py-3 px-3 font-semibold text-right">Lembur Bulanan</th>
                 <th class="py-3 px-3 font-semibold text-right">Benefit Malam</th>
                 <th class="py-3 px-3 font-semibold text-right">Benefit Bulanan</th>
@@ -300,8 +300,8 @@
       </div>
 
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-        <h3 class="text-base font-bold text-slate-900 mb-1">Perbandingan Jam Kerja vs Target Disesuaikan</h3>
-        <p class="text-xs text-slate-500 mb-4">Visualisasi jam reguler, lembur malam (&gt; 21.00), dan sisa/kelebihan terhadap target 198 jam.</p>
+        <h3 class="text-base font-bold text-slate-900 mb-1">Perbandingan Jam Kerja vs Target Bulanan</h3>
+        <p class="text-xs text-slate-500 mb-4">Visualisasi jam reguler (&le; 21.00), lembur malam (&gt; 21.00), dan target 198 jam.</p>
         <div class="relative h-72">
           <canvas id="hours-chart"></canvas>
         </div>
@@ -373,7 +373,7 @@
             </li>
             <li class="flex gap-2.5">
               <span class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">4</span>
-              <span><strong>Lembur Malam &gt; 21.00 (Rp 25.000/jam + Potong Target):</strong> Setiap jam kerja setelah pukul 21.00 langsung dihitung lembur Rp 25.000/jam, dan jam tersebut otomatis mengurangi target bulanan 198 jam (<code class="bg-slate-100 px-1 rounded text-xs">Target Baru = 198 − Jam &gt; 21.00</code>).</span>
+              <span><strong>Lembur Malam &gt; 21.00 (Rp 25.000/jam):</strong> Setiap jam kerja setelah pukul 21.00 langsung dihitung lembur Rp 25.000/jam dan tidak masuk dalam komponen perhitungan pencapaian target 198 jam (target 198 jam hanya dihitung sampai dengan pukul 21.00).</span>
             </li>
           </ul>
         </div>
@@ -509,7 +509,7 @@
           nightOtPay += res.nightOtPay;
         });
 
-        const adjustedTarget = Math.max(0, s.monthlyTargetHours - nightOtHours);
+        const adjustedTarget = s.monthlyTargetHours;
         const monthlyOtHours = Math.max(0, regularHours - adjustedTarget);
         const monthlyOtPay = Math.round(monthlyOtHours * s.monthlyOvertimeRate);
         const totalOtPay = nightOtPay + monthlyOtPay;
@@ -640,11 +640,11 @@
         document.getElementById('kpi-regular-hours').textContent = formatHours(agg.regularHours);
         document.getElementById('kpi-total-hours-sub').textContent = `Total: ${formatHours(agg.totalHours)}`;
         document.getElementById('kpi-progress-bar').style.width = `${pct.toFixed(1)}%`;
-        document.getElementById('kpi-progress-text').textContent = `${pct.toFixed(1)}% dari target disesuaikan`;
+        document.getElementById('kpi-progress-text').textContent = `${pct.toFixed(1)}% dari target ${baseTargetTotal} jam`;
 
         document.getElementById('kpi-adjusted-target').textContent = formatHours(agg.adjustedTarget);
-        document.getElementById('kpi-base-target-sub').textContent = `Awal: ${baseTargetTotal} jam`;
-        document.getElementById('kpi-target-formula').textContent = `${baseTargetTotal} − ${agg.nightOtHours.toFixed(1)} jam (>21.00) = ${agg.adjustedTarget.toFixed(1)} jam`;
+        document.getElementById('kpi-base-target-sub').textContent = `Tetap: ${baseTargetTotal} jam`;
+        document.getElementById('kpi-target-formula').textContent = `Jam > 21.00 (${agg.nightOtHours.toFixed(1)} jam) tidak masuk target`;
         document.getElementById('kpi-remaining-text').textContent = agg.remainingHours > 0
           ? `Sisa target: ${formatHours(agg.remainingHours)}`
           : 'Target bulanan telah tercapai!';
@@ -751,7 +751,7 @@
                 borderRadius: 6
               },
               {
-                label: 'Target Disesuaikan (198 − Malam)',
+                label: 'Target Bulanan (198 Jam)',
                 data: rows.map((r) => Number(r.stats.adjustedTarget.toFixed(2))),
                 backgroundColor: '#cbd5e1',
                 borderRadius: 6
@@ -1140,7 +1140,7 @@
 
       document.getElementById('btn-export-csv').addEventListener('click', () => {
         const month = state.selectedMonth;
-        const headers = ['Pengemudi', 'Plat', 'Hari Kerja', 'Jam Reguler (<=21.00)', 'Lembur Malam (>21.00)', 'Target Disesuaikan', 'Lembur Bulanan (>Target)', 'Benefit Malam (Rp)', 'Benefit Bulanan (Rp)', 'Total Benefit (Rp)'];
+        const headers = ['Pengemudi', 'Plat', 'Hari Kerja', 'Jam Reguler (<=21.00)', 'Lembur Malam (>21.00)', 'Target Bulanan', 'Lembur Bulanan (>Target)', 'Benefit Malam (Rp)', 'Benefit Bulanan (Rp)', 'Total Benefit (Rp)'];
         const rows = state.drivers.map((d) => {
           const m = computeDriverMonthly(d.id, month);
           return [
