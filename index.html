@@ -104,8 +104,7 @@
           <span id="kpi-adjusted-target" class="text-2xl font-extrabold text-slate-900 tabular-nums">198 jam</span>
           <span id="kpi-base-target-sub" class="text-xs text-slate-500 tabular-nums">Tetap: 198 jam</span>
         </div>
-        <p id="kpi-target-formula" class="mt-3 text-xs text-slate-600 tabular-nums">Jam &gt; 21.00 tidak masuk target</p>
-        <p id="kpi-remaining-text" class="mt-1 text-xs font-medium text-slate-500 tabular-nums">Sisa target: 198 jam</p>
+        <p id="kpi-remaining-text" class="mt-3 text-xs font-medium text-slate-500 tabular-nums">Sisa target: 198 jam</p>
       </div>
 
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
@@ -663,7 +662,6 @@
 
         document.getElementById('kpi-adjusted-target').textContent = formatHours(agg.adjustedTarget);
         document.getElementById('kpi-base-target-sub').textContent = `Tetap: ${baseTargetTotal} jam`;
-        document.getElementById('kpi-target-formula').textContent = `Jam > 21.00 (${agg.nightOtHours.toFixed(1)} jam) tidak masuk target`;
         document.getElementById('kpi-remaining-text').textContent = agg.remainingHours > 0
           ? `Sisa target: ${formatHours(agg.remainingHours)}`
           : 'Target bulanan telah tercapai!';
