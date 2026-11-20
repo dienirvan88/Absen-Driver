@@ -710,7 +710,7 @@
 
         const filtered = state.logs
           .filter((l) => l.date.startsWith(month) && (drvFilter === 'all' || l.driverId === drvFilter))
-          .sort((a, b) => (b.date + b.clockIn).localeCompare(a.date + a.clockIn));
+          .sort((a, b) => (a.date + a.clockIn).localeCompare(b.date + b.clockIn));
 
         document.getElementById('logs-count-badge').textContent = `${filtered.length} catatan`;
 
