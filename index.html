@@ -250,7 +250,7 @@
           <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 class="text-base font-bold text-slate-900">Riwayat Absensi Bulan Ini</h2>
-              <p class="text-xs text-slate-500">Klik hapus jika ada catatan yang perlu dikoreksi.</p>
+              <p id="logs-subtitle" class="text-xs text-slate-500">Klik hapus jika ada catatan yang perlu dikoreksi.</p>
             </div>
             <span id="logs-count-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">0 catatan</span>
           </div>
@@ -1271,7 +1271,7 @@
 
       function applyDriverMode() {
         if (!isDriverMode) return;
-        ['manual-card', 'th-aksi', 'btn-add-driver', 'tab-btn-aturan', 'tab-aturan', 'badge-night-rate', 'badge-total-rate'].forEach((id) => {
+        ['manual-card', 'th-aksi', 'btn-add-driver', 'tab-btn-aturan', 'tab-aturan', 'badge-night-rate', 'badge-total-rate', 'logs-subtitle'].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.remove();
         });
