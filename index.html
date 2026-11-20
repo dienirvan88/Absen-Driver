@@ -262,6 +262,8 @@
                   <th class="py-3 px-4 font-semibold">Tanggal</th>
                   <th class="py-3 px-3 font-semibold">Pengemudi</th>
                   <th class="py-3 px-3 font-semibold">Jam</th>
+                  <th class="py-3 px-3 font-semibold">GPS Masuk</th>
+                  <th class="py-3 px-3 font-semibold">GPS Pulang</th>
                   <th class="py-3 px-3 font-semibold text-right">Reguler</th>
                   <th class="py-3 px-3 font-semibold text-right">Lembur &gt;21.00</th>
                   <th class="py-3 px-3 font-semibold text-right">Benefit Malam</th>
@@ -715,7 +717,7 @@
         document.getElementById('logs-count-badge').textContent = `${filtered.length} catatan`;
 
         if (filtered.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="${isDriverMode ? 6 : 7}" class="py-10 text-center text-slate-400 text-sm">Belum ada catatan absensi pada bulan ini.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="${isDriverMode ? 8 : 9}" class="py-10 text-center text-slate-400 text-sm">Belum ada catatan absensi pada bulan ini.</td></tr>`;
           return;
         }
 
@@ -734,11 +736,17 @@
               <td class="py-3 px-3 whitespace-nowrap font-medium text-slate-800">${drv ? drv.name : 'Tidak diketahui'}</td>
               <td class="py-3 px-3 whitespace-nowrap">
                 <div class="tabular-nums font-medium text-slate-800">${l.clockIn} – ${l.clockOut}</div>
-                <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
-                  <span class="inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold ${badgeClass}">${formatHours(res.totalHours)}</span>
-                  ${l.gpsIn ? `<a href="${formatMapsUrl(l.gpsIn)}" target="_blank" rel="noopener noreferrer" class="text-[11px] font-semibold text-indigo-600 hover:underline">📍Masuk</a>` : ''}
-                  ${l.gpsOut ? `<a href="${formatMapsUrl(l.gpsOut)}" target="_blank" rel="noopener noreferrer" class="text-[11px] font-semibold text-rose-600 hover:underline">📍Pulang</a>` : ''}
-                </div>
+                <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold ${badgeClass}">${formatHours(res.totalHours)}</span>
+              </td>
+              <td class="py-3 px-3 whitespace-nowrap text-xs">
+                ${l.gpsIn
+                  ? `<a href="${formatMapsUrl(l.gpsIn)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:underline">📍 Maps</a>`
+                  : `<span class="text-slate-400">-</span>`}
+              </td>
+              <td class="py-3 px-3 whitespace-nowrap text-xs">
+                ${l.gpsOut
+                  ? `<a href="${formatMapsUrl(l.gpsOut)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-semibold text-rose-600 hover:underline">📍 Maps</a>`
+                  : `<span class="text-slate-400">-</span>`}
               </td>
               <td class="py-3 px-3 text-right tabular-nums font-semibold text-indigo-700">${formatHours(res.regularHours)}</td>
               <td class="py-3 px-3 text-right tabular-nums font-semibold ${res.nightOtHours > 0 ? 'text-purple-700' : 'text-slate-400'}">${formatHours(res.nightOtHours)}</td>
