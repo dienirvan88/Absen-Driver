@@ -111,7 +111,7 @@
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Lembur Malam (&gt; 21.00)</span>
-          <span id="badge-night-rate" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-50 text-purple-700">Rp 25rb/jam</span>
+          <span id="badge-night-rate" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-50 text-purple-700">Rp 15rb/jam</span>
         </div>
         <div class="mt-2 flex items-baseline gap-2">
           <span id="kpi-night-pay" class="text-2xl font-extrabold text-purple-700 tabular-nums">Rp 0</span>
@@ -123,7 +123,7 @@
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Benefit Lembur</span>
-          <span id="badge-total-rate" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700">Rp 15rb + 25rb</span>
+          <span id="badge-total-rate" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700">Rp 15rb/jam</span>
         </div>
         <div class="mt-2 flex items-baseline gap-2">
           <span id="kpi-total-pay" class="text-2xl font-extrabold text-emerald-700 tabular-nums">Rp 0</span>
@@ -275,7 +275,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div>
             <h2 class="text-base font-bold text-slate-900">Rekapitulasi Jam Kerja &amp; Benefit Per Pengemudi</h2>
-            <p class="text-xs text-slate-500">Jam &gt; 21.00 dihitung lembur Rp 25rb/jam &amp; tidak masuk target 198 jam; kelebihan jam &le; 21.00 di atas 198 jam dihitung Rp 15rb/jam.</p>
+            <p class="text-xs text-slate-500">Jam &gt; 21.00 dihitung lembur Rp 15rb/jam &amp; tidak masuk target 198 jam; kelebihan jam &le; 21.00 di atas 198 jam dihitung Rp 15rb/jam.</p>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -373,7 +373,7 @@
             </li>
             <li class="flex gap-2.5">
               <span class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">4</span>
-              <span><strong>Lembur Malam &gt; 21.00 (Rp 25.000/jam):</strong> Setiap jam kerja setelah pukul 21.00 langsung dihitung lembur Rp 25.000/jam dan tidak masuk dalam komponen perhitungan pencapaian target 198 jam (target 198 jam hanya dihitung sampai dengan pukul 21.00).</span>
+              <span><strong>Lembur Malam &gt; 21.00 (Rp 15.000/jam):</strong> Setiap jam kerja setelah pukul 21.00 langsung dihitung lembur Rp 15.000/jam dan tidak masuk dalam komponen perhitungan pencapaian target 198 jam (target 198 jam hanya dihitung sampai dengan pukul 21.00).</span>
             </li>
           </ul>
         </div>
@@ -383,14 +383,14 @@
 
   <script>
     (function () {
-      const STORAGE_KEY = 'absendriver_state_v3';
+      const STORAGE_KEY = 'absendriver_state_v4';
 
       const DEFAULT_SETTINGS = {
         dailyStandardHours: 9,
         monthlyTargetHours: 198,
         monthlyOvertimeRate: 15000,
         nightCutoffMinutes: 21 * 60, // 21:00
-        nightOvertimeRate: 25000,
+        nightOvertimeRate: 15000,
         gsheetsUrl: ''
       };
 
@@ -435,6 +435,21 @@
                 settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) }
               };
             }
+          }
+          const rawOld = localStorage.getItem('absendriver_state_v3');
+          if (rawOld) {
+            const parsedOld = JSON.parse(rawOld);
+            const fresh = createSampleState();
+            if (parsedOld && parsedOld.settings && parsedOld.settings.gsheetsUrl) {
+              fresh.settings.gsheetsUrl = parsedOld.settings.gsheetsUrl;
+            }
+            if (parsedOld && Array.isArray(parsedOld.logs)) {
+              fresh.logs = parsedOld.logs;
+            }
+            if (parsedOld && parsedOld.activeShifts) {
+              fresh.activeShifts = parsedOld.activeShifts;
+            }
+            return fresh;
           }
         } catch (e) {
           // ignore storage errors
