@@ -116,7 +116,7 @@
           <span id="kpi-night-pay" class="text-2xl font-extrabold text-purple-700 tabular-nums">Rp 0</span>
         </div>
         <p id="kpi-night-hours" class="mt-3 text-xs text-slate-600 tabular-nums">0 jam lembur malam</p>
-        <p class="mt-1 text-xs text-slate-500">Tidak masuk hitungan target 198 jam</p>
+        <p id="kpi-night-target-note" class="mt-1 text-xs text-slate-500">Tidak masuk hitungan target 198 jam</p>
       </div>
 
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
@@ -128,7 +128,7 @@
           <span id="kpi-total-pay" class="text-2xl font-extrabold text-emerald-700 tabular-nums">Rp 0</span>
         </div>
         <p id="kpi-monthly-ot" class="mt-3 text-xs text-slate-600 tabular-nums">Lembur bulanan: 0 jam (Rp 0)</p>
-        <p class="mt-1 text-xs text-slate-500">Kelebihan jam &le; 21.00 di atas 198 jam</p>
+        <p id="kpi-total-target-note" class="mt-1 text-xs text-slate-500">Kelebihan jam &le; 21.00 di atas 198 jam</p>
       </div>
     </section>
 
@@ -284,7 +284,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div>
             <h2 class="text-base font-bold text-slate-900">Rekapitulasi Jam Kerja &amp; Benefit Per Pengemudi</h2>
-            <p class="text-xs text-slate-500">Jam &gt; 21.00 dihitung lembur Rp 15rb/jam &amp; tidak masuk target 198 jam; kelebihan jam &le; 21.00 di atas 198 jam dihitung Rp 15rb/jam.</p>
+            <p id="rekap-subtitle" class="text-xs text-slate-500">Jam &gt; 21.00 dihitung lembur Rp 15rb/jam &amp; tidak masuk target 198 jam; kelebihan jam &le; 21.00 di atas 198 jam dihitung Rp 15rb/jam.</p>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -310,7 +310,7 @@
 
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
         <h3 class="text-base font-bold text-slate-900 mb-1">Perbandingan Jam Kerja vs Target Bulanan</h3>
-        <p class="text-xs text-slate-500 mb-4">Visualisasi jam reguler (&le; 21.00), lembur malam (&gt; 21.00), dan target 198 jam.</p>
+        <p id="chart-subtitle" class="text-xs text-slate-500 mb-4">Visualisasi jam reguler (&le; 21.00), lembur malam (&gt; 21.00), dan target 198 jam.</p>
         <div class="relative h-72">
           <canvas id="hours-chart"></canvas>
         </div>
@@ -367,7 +367,7 @@
 
         <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
           <h2 class="text-base font-bold text-slate-900">Ringkasan Logika Perhitungan</h2>
-          <ul class="space-y-2.5 text-sm text-slate-700">
+          <ul id="rules-summary-list" class="space-y-2.5 text-sm text-slate-700">
             <li class="flex gap-2.5">
               <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
               <span><strong>Standar Harian 9 Jam:</strong> Setiap shift dibandingkan dengan standar 9 jam/hari untuk memantau ketercapaian harian pengemudi.</span>
@@ -561,6 +561,68 @@
 
       function formatRp(num) {
         return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+      }
+
+      function formatShortRp(num) {
+        const rb = num / 1000;
+        const val = Number.isInteger(rb) ? rb : rb.toLocaleString('id-ID', { maximumFractionDigits: 1 });
+        return `Rp ${val}rb`;
+      }
+
+      function renderDynamicLabels() {
+        const st = state.settings;
+        const daily = st.dailyStandardHours;
+        const target = st.monthlyTargetHours;
+        const mRate = st.monthlyOvertimeRate;
+        const nRate = st.nightOvertimeRate;
+
+        const badgeNight = document.getElementById('badge-night-rate');
+        if (badgeNight) badgeNight.textContent = `${formatShortRp(nRate)}/jam`;
+
+        const badgeTotal = document.getElementById('badge-total-rate');
+        if (badgeTotal) {
+          badgeTotal.textContent = mRate === nRate
+            ? `${formatShortRp(mRate)}/jam`
+            : `${formatShortRp(mRate)} + ${formatShortRp(nRate)}`;
+        }
+
+        const nightNote = document.getElementById('kpi-night-target-note');
+        if (nightNote) nightNote.textContent = `Tidak masuk hitungan target ${target} jam`;
+
+        const totalNote = document.getElementById('kpi-total-target-note');
+        if (totalNote) totalNote.textContent = `Kelebihan jam ≤ 21.00 di atas ${target} jam`;
+
+        const rekapSub = document.getElementById('rekap-subtitle');
+        if (rekapSub) {
+          rekapSub.textContent = `Jam > 21.00 dihitung lembur ${formatShortRp(nRate)}/jam & tidak masuk target ${target} jam; kelebihan jam ≤ 21.00 di atas ${target} jam dihitung ${formatShortRp(mRate)}/jam.`;
+        }
+
+        const chartSub = document.getElementById('chart-subtitle');
+        if (chartSub) {
+          chartSub.textContent = `Visualisasi jam reguler (≤ 21.00), lembur malam (> 21.00), dan target ${target} jam.`;
+        }
+
+        const rulesList = document.getElementById('rules-summary-list');
+        if (rulesList) {
+          rulesList.innerHTML = `
+            <li class="flex gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+              <span><strong>Standar Harian ${daily} Jam:</strong> Setiap shift dibandingkan dengan standar ${daily} jam/hari untuk memantau ketercapaian harian pengemudi.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <span><strong>Target Bulanan ${target} Jam:</strong> Akumulasi jam kerja reguler (&le; 21.00) dalam 1 bulan ditargetkan mencapai ${target} jam.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <span><strong>Lembur Bulanan (${formatRp(mRate)}/jam):</strong> Apabila total jam reguler melebihi target bulanan yang berlaku, setiap kelebihan jam dibayar ${formatRp(mRate)}/jam.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">4</span>
+              <span><strong>Lembur Malam &gt; 21.00 (${formatRp(nRate)}/jam):</strong> Setiap jam kerja setelah pukul 21.00 langsung dihitung lembur ${formatRp(nRate)}/jam dan tidak masuk dalam komponen perhitungan pencapaian target ${target} jam (target ${target} jam hanya dihitung sampai dengan pukul 21.00).</span>
+            </li>
+          `;
+        }
       }
 
       function showToast(msg, type = 'success') {
@@ -810,7 +872,7 @@
                 borderRadius: 6
               },
               {
-                label: 'Target Bulanan (198 Jam)',
+                label: `Target Bulanan (${state.settings.monthlyTargetHours} Jam)`,
                 data: rows.map((r) => Number(r.stats.adjustedTarget.toFixed(2))),
                 backgroundColor: '#cbd5e1',
                 borderRadius: 6
@@ -948,6 +1010,13 @@
             if (data.activeShifts && typeof data.activeShifts === 'object') {
               state.activeShifts = data.activeShifts;
             }
+            if (data.settings && typeof data.settings === 'object') {
+              ['dailyStandardHours', 'monthlyTargetHours', 'monthlyOvertimeRate', 'nightOvertimeRate'].forEach((k) => {
+                if (typeof data.settings[k] === 'number' && !isNaN(data.settings[k])) {
+                  state.settings[k] = data.settings[k];
+                }
+              });
+            }
             saveState();
             renderAll();
             if (!silent) showToast(`Sinkronisasi berhasil (${data.logs.length} catatan).`);
@@ -977,6 +1046,7 @@
       }
 
       function renderAll() {
+        renderDynamicLabels();
         renderDriverSelects();
         renderKPIs();
         renderLogsTable();
@@ -1193,7 +1263,15 @@
         saveState();
         renderAll();
         if (state.settings.gsheetsUrl) {
-          pullFromSheets(false);
+          pushToSheets({
+            action: 'save_settings',
+            settings: {
+              dailyStandardHours: state.settings.dailyStandardHours,
+              monthlyTargetHours: state.settings.monthlyTargetHours,
+              monthlyOvertimeRate: state.settings.monthlyOvertimeRate,
+              nightOvertimeRate: state.settings.nightOvertimeRate
+            }
+          }).then(() => showToast('Pengaturan disimpan & disinkronkan ke Google Sheets.'));
         } else {
           showToast('Pengaturan aturan & tarif diperbarui.');
         }
