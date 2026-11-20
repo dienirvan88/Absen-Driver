@@ -156,6 +156,10 @@
                 <label for="quick-driver" class="block text-xs font-medium text-indigo-100 mb-1">Pilih Pengemudi</label>
                 <select id="quick-driver" class="w-full rounded-xl bg-white/10 border border-white/20 px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-white/40 [&>option]:text-slate-900"></select>
               </div>
+              <div>
+                <label for="quick-note" class="block text-xs font-medium text-indigo-100 mb-1">Catatan / Rute (Opsional)</label>
+                <input id="quick-note" type="text" placeholder="Contoh: Antar ke Bandara Soekarno-Hatta" class="w-full rounded-xl bg-white/10 border border-white/20 px-3 py-2 text-sm text-white placeholder-indigo-200/70 focus:outline-none focus:ring-2 focus:ring-white/40" />
+              </div>
               <div id="active-shift-info" class="hidden rounded-xl bg-white/10 border border-white/15 p-3 text-xs space-y-1">
                 <div class="flex justify-between">
                   <span class="text-indigo-200">Masuk pada:</span>
@@ -797,7 +801,11 @@
         const btnIn = document.getElementById('btn-clock-in');
         const btnOut = document.getElementById('btn-clock-out');
 
+        const quickNoteEl = document.getElementById('quick-note');
         if (active) {
+          if (quickNoteEl && !quickNoteEl.value && active.note) {
+            quickNoteEl.value = active.note;
+          }
           badge.textContent = 'Sedang Bekerja';
           badge.className = 'inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-400 text-slate-950';
           infoBox.classList.remove('hidden');
@@ -988,14 +996,17 @@
         if (!drvId) return;
         const now = new Date();
         const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const quickNoteEl = document.getElementById('quick-note');
+        const noteVal = quickNoteEl ? quickNoteEl.value.trim() : '';
         const shiftData = {
           date: getTodayStr(),
-          clockIn: hhmm
+          clockIn: hhmm,
+          note: noteVal
         };
         state.activeShifts[drvId] = shiftData;
         saveState();
         renderQuickShiftUI();
-        pushToSheets({ action: 'clock_in', driverId: drvId, date: shiftData.date, clockIn: shiftData.clockIn });
+        pushToSheets({ action: 'clock_in', driverId: drvId, date: shiftData.date, clockIn: shiftData.clockIn, note: noteVal });
         showToast('Absen masuk berhasil dicatat.');
       });
 
@@ -1006,17 +1017,21 @@
         const now = new Date();
         const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+        const quickNoteEl = document.getElementById('quick-note');
+        const typedNote = quickNoteEl ? quickNoteEl.value.trim() : '';
+        const finalNote = typedNote || active.note || 'Absen langsung';
         const newLog = {
           id: `log-${Date.now()}`,
           driverId: drvId,
           date: active.date,
           clockIn: active.clockIn,
           clockOut: hhmm,
-          note: 'Absen langsung'
+          note: finalNote
         };
         const drv = state.drivers.find((d) => d.id === drvId);
         state.logs.push(newLog);
         delete state.activeShifts[drvId];
+        if (quickNoteEl) quickNoteEl.value = '';
         saveState();
         renderAll();
         pushToSheets({ action: 'add', log: newLog, driverName: drv ? drv.name : 'Arifin', plate: drv ? drv.plate : 'B 1712 WMW' });
